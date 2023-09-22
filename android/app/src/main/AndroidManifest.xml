@@ -1,21 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Tell Google Play Store that your app uses Bluetooth LE
-     Set android:required="true" if bluetooth is necessary -->
+    <!-- Tell Google Play Store that your app uses Bluetooth LE.
+         Set android:required="true" if Bluetooth is necessary. -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
-    <!-- New Bluetooth permissions in Android 12
-    https://developer.android.com/about/versions/12/features/bluetooth-permissions -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
+    <!-- Bluetooth permissions in Android 12 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- legacy for Android 11 or lower -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
-
-    <!-- legacy for Android 9 or lower -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
     <application
         android:label="uv_risco"
         android:name="${applicationName}"
@@ -33,9 +27,9 @@
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"
+                />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

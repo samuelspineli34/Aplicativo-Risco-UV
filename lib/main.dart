@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'bluetooth_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Solicite as permissões necessárias
+  final permissions = [Permission.bluetooth, Permission.location];
+  await permissions.request();
+
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({Key? key});
 
@@ -55,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       scanning = true;
                     });
                     controller.bluetooth_escanear();
-                    Timer(Duration(seconds: 34), () {
+                    Timer(Duration(seconds: 5), () {
                       setState(() {
                         scanning = false;
                       });
@@ -79,16 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         final devices = snapshot.data!;
-                        final filteredDevices = devices
-                            .where((data) => data.device.name != null &&
-                            data.device.name!.isNotEmpty)
-                            .toList();
-                        if (filteredDevices.isNotEmpty) {
+                        if (devices.isNotEmpty) {
                           return ListView.builder(
-                            itemCount: filteredDevices.length,
+                            itemCount: devices.length,
                             itemBuilder: (context, index) {
-                              final data = filteredDevices[index];
-                              final deviceName = data.device.name!;
+                              final data = devices[index];
+                              final deviceName = data.device.name ?? 'Desconhecido';
                               return Card(
                                 elevation: 2,
                                 child: ListTile(
@@ -100,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           );
                         } else {
                           return const Center(
-                            child: Text("Nenhum dispositivo Bluetooth encontrado com nome"),
+                            child: Text("Nenhum dispositivo Bluetooth encontrado"),
                           );
                         }
                       } else {

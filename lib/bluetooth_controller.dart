@@ -8,12 +8,14 @@ class BluetoothController extends GetxController {
     isScanning = true;
     update(); // Notifique a mudança de estado
 
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 35));
-
-    // Espere por 25 segundos
-    await Future.delayed(Duration(seconds: 35));
-
+    print("Iniciando varredura Bluetooth");
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+    print("Varredura Bluetooth em andamento...");
+    await Future.delayed(Duration(seconds: 5));
+    print("Parando a varredura Bluetooth");
     await FlutterBluePlus.stopScan();
+    print("Varredura Bluetooth concluída");
+
     isScanning = false;
     update(); // Notifique a mudança de estado
     print("Fim do escaneamento");

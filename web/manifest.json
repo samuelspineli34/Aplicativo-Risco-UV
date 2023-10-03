@@ -1,6 +1,6 @@
 {
-    "name": "uv_risco",
-    "short_name": "uv_risco",
+    "name": "arduino_uv",
+    "short_name": "arduino_uv",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

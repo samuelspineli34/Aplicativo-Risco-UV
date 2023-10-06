@@ -23,7 +23,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: CustomAppBar(
-        Title: 'Remote Arduino',
+        Title: 'UVC Seguro',
         isBluetooth: true,
         isDiscovering: false,
         onPress: onPressBluetooth,
@@ -39,7 +39,7 @@ class HomePage extends StatelessWidget {
                     children: [
                       const Icon(Icons.bluetooth_disabled_sharp, size: 50),
                       const Text(
-                        "Bluetooth Disconnected",
+                        "Bluetooth desconectado",
                         style: TextStyle(
                           fontSize: 20,
                         ),

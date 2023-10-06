@@ -117,7 +117,7 @@ class _SelecionarDispositivoPageState extends State<SelecionarDispositivoPage> {
         .toList();
     return Scaffold(
       appBar: CustomAppBar(
-        Title: 'Bluetooth List',
+        Title: 'Aparelho Bluetooth',
         isBluetooth: false,
         isDiscovering: _isDiscovering!,
         onPress: () {},

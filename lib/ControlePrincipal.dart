@@ -1,11 +1,7 @@
-// ignore_for_file: file_names
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:layout/components/ButtonDouble.dart';
-import 'package:layout/components/ButtonSingle.dart';
-
-import 'components/VoiceButtonPage.dart';
 
 class ControlePrincipalPage extends StatefulWidget {
   final BluetoothDevice? server;
@@ -26,21 +22,17 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
   static const clientID = 0;
   BluetoothConnection? connection;
   String? language;
-
-  // ignore: deprecated_member_use
   List<_Message> messages = <_Message>[];
   String _messageBuffer = '';
-
   final TextEditingController textEditingController = TextEditingController();
   final ScrollController listScrollController = ScrollController();
-
+  bool isListening = false;
   bool isConnecting = true;
   bool get isConnected => connection != null && connection!.isConnected;
-
   bool isDisconnecting = false;
   bool buttonClicado = false;
-
   List<String> _languages = ['en_US', 'es_ES', 'pt_BR'];
+  String receivedData = ""; // Variável para armazenar os dados recebidos
 
   @override
   void initState() {
@@ -50,27 +42,11 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
       print('Connected to device');
       connection = _connection;
       setState(() {
-        
         isConnecting = false;
         isDisconnecting = false;
       });
 
-      connection!.input!.listen(_onDataReceived).onDone(() {
-        // Example: Detect which side closed the connection
-        // There should be `isDisconnecting` flag to show are we are (locally)
-        // in middle of disconnecting process, should be set before calling
-        // `dispose`, `finish` or `close`, which all causes to disconnect.
-        // If we except the disconnection, `onDone` should be fired as result.
-        // If we didn't except this (no flag set), it means closing by remote.
-        if (isDisconnecting) {
-          print('Disconnected localy!');
-        } else {
-          print('Disconnected remote!');
-        }
-        if (mounted) {
-          setState(() {});
-        }
-      });
+      _receiveDataFromArduino(); // Start listening for data
     }).catchError((error) {
       print('Failed to connect, something is wrong!');
       print(error);
@@ -79,7 +55,6 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
 
   @override
   void dispose() {
-    // Avoid memory leak (`setState` after dispose) and disconnect
     if (isConnected) {
       isDisconnecting = true;
       connection!.dispose();
@@ -96,7 +71,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
         children: <Widget>[
           Container(
             child: Text(
-                (text) {
+                    (text) {
                   return text == '/shrug' ? '¯\\_(ツ)_/¯' : text;
                 }(_message.text.trim()),
                 style: const TextStyle(color: Colors.white)),
@@ -105,7 +80,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
             width: 222.0,
             decoration: BoxDecoration(
                 color:
-                    _message.whom == clientID ? Colors.blueAccent : Colors.grey,
+                _message.whom == clientID ? Colors.blueAccent : Colors.grey,
                 borderRadius: BorderRadius.circular(7.0)),
           ),
         ],
@@ -126,48 +101,28 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Column(children: [
-                          Container(
-                              height: 60, width: 90, child: SizedBox.shrink())
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          Container(
-                            height: 60,
-                            width: 90,
-                            child: VoiceButtonComponent(
-                                connection: connection,
-                                clientID: clientID,
-                                languageSelected: language),
+                        Container(
+                          child: DropdownButton<String>(
+                            value: language == null ? 'pt_BR' : language,
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                            items: _languages.map((String items) {
+                              return DropdownMenuItem(
+                                value: items,
+                                child: Text(items),
+                              );
+                            }).toList(),
+                            // After selecting the desired option,it will
+                            // change button value to selected value
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                language = newValue!;
+                              });
+                            },
                           ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Container(
-                                child: DropdownButton<String>(
-                                  value: language == null ? 'pt_BR' : language,
-                                  icon: const Icon(Icons.keyboard_arrow_down),
-                                  items: _languages.map((String items) {
-                                    return DropdownMenuItem(
-                                      value: items,
-                                      child: Text(items),
-                                    );
-                                  }).toList(),
-                                  // After selecting the desired option,it will
-                                  // change button value to selected value
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      language = newValue!;
-                                    });
-                                  },
-                                ),
-                              )
-                            ]),
+                        )
                       ]),
                 ),
                 Padding(
@@ -176,258 +131,11 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "A/B",
-                            comandOn: 'a',
-                            comandOff: 'b',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "C/D",
-                            comandOn: 'c',
-                            comandOff: 'd',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "E/F",
-                            comandOn: 'e',
-                            comandOff: 'f',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "G/H",
-                            comandOn: 'g',
-                            comandOff: 'h',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "I/J",
-                            comandOn: 'i',
-                            comandOff: 'j',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "K/L",
-                            comandOn: 'k',
-                            comandOff: 'l',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "M/N",
-                            comandOn: 'm',
-                            comandOff: 'n',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "O/P",
-                            comandOn: 'o',
-                            comandOff: 'p',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "Q/R",
-                            comandOn: 'q',
-                            comandOff: 'r',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "S/T",
-                            comandOn: 's',
-                            comandOff: 't',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "U/V",
-                            comandOn: 'u',
-                            comandOff: 'v',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "W/X",
-                            comandOn: 'w',
-                            comandOff: 'x',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "Y/Z",
-                            comandOn: 'y',
-                            comandOff: 'z',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "0/1",
-                            comandOn: '0',
-                            comandOff: '1',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "2/3",
-                            comandOn: '2',
-                            comandOff: '3',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "4/5",
-                            comandOn: '4',
-                            comandOff: '5',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "6/7",
-                            comandOn: '6',
-                            comandOff: '7',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 30),
-                        Column(children: [
-                          ButtonDoubleComponent(
-                            buttonName: "8/9",
-                            comandOn: '8',
-                            comandOff: '9',
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 30),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(children: [
-                          ButtonSingleComponent(
-                            buttonName: "+",
-                            comandOn: '+',
-                            colorButton: Color.fromRGBO(238, 57, 61, 1),
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 10),
-                        Column(children: [
-                          ButtonSingleComponent(
-                            buttonName: "-",
-                            comandOn: '-',
-                            colorButton: Color.fromRGBO(8, 164, 113, 1),
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 10),
-                        Column(children: [
-                          ButtonSingleComponent(
-                            buttonName: "*",
-                            comandOn: '*',
-                            colorButton: Color.fromRGBO(239, 206, 45, 1),
-                            clientID: clientID,
-                            connection: connection,
-                          ),
-                        ]),
-                        const SizedBox(width: 10),
-                        Column(children: [
-                          ButtonSingleComponent(
-                            buttonName: "/",
-                            comandOn: '/',
-                            colorButton: Color.fromRGBO(49, 86, 188, 1),
-                            clientID: clientID,
-                            connection: connection,
+                          ElevatedButton(
+                            onPressed: () {
+                              _printReceivedData();
+                            },
+                            child: Text("Imprimir Dados"),
                           ),
                         ]),
                       ]),
@@ -440,7 +148,31 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
     );
   }
 
+  void _receiveDataFromArduino() {
+    // Verifique se a conexão está estabelecida
+    if (isConnected && !isListening) {
+      // Chame a função _onDataReceived para receber dados
+      connection!.input!.listen(
+        _onDataReceived,
+        onError: (dynamic error) {
+          print('Erro na conexão Bluetooth: $error');
+          // Adicione código para lidar com o erro, como tentar reconectar.
+        },
+        onDone: () {
+          print('Conexão Bluetooth encerrada pelo dispositivo remoto');
+          // Adicione código para lidar com o encerramento da conexão.
+        },
+      );
+      isListening = true; // Marque que estamos ouvindo o stream
+    } else {
+      print('Erro: A conexão Bluetooth não está estabelecida ou já estamos ouvindo.');
+    }
+  }
+
+
   void _onDataReceived(Uint8List data) {
+    print('Tamanho dos dados recebidos: ${data.length}');
+    print('Dados recebidos: ${String.fromCharCodes(data)}');
     // Allocate buffer for parsed data
     int backspacesCounter = 0;
     for (var byte in data) {
@@ -469,13 +201,17 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
     String dataString = String.fromCharCodes(buffer);
     int index = buffer.indexOf(13);
     if (~index != 0) {
+      receivedData = backspacesCounter > 0
+          ? _messageBuffer.substring(0, _messageBuffer.length - backspacesCounter)
+          : _messageBuffer + dataString.substring(0, index);
+      print('Dados recebidos: $receivedData'); // Imprime os dados recebidos
       setState(() {
         messages.add(
           _Message(
             1,
             backspacesCounter > 0
                 ? _messageBuffer.substring(
-                    0, _messageBuffer.length - backspacesCounter)
+                0, _messageBuffer.length - backspacesCounter)
                 : _messageBuffer + dataString.substring(0, index),
           ),
         );
@@ -484,8 +220,12 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
     } else {
       _messageBuffer = (backspacesCounter > 0
           ? _messageBuffer.substring(
-              0, _messageBuffer.length - backspacesCounter)
+          0, _messageBuffer.length - backspacesCounter)
           : _messageBuffer + dataString);
     }
+  }
+
+  void _printReceivedData() {
+    print('Dados recebidos: $receivedData');
   }
 }

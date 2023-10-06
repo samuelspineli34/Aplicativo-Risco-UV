@@ -1,122 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:get/get.dart';
-import 'bluetooth_controller.dart';
+import 'package:layout/SelecionarDispositivo.dart';
+import 'package:layout/HomePage.dart';
+import 'package:provider/provider.dart';
+import 'provider/StatusConexaoProvider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:async';
 
-void main() async {
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
 
   // Solicite as permissões necessárias
-  final permissions = [Permission.bluetooth, Permission.location];
+  final permissions = [Permission.bluetooth, Permission.location, Permission.bluetoothScan, Permission.bluetoothConnect, Permission.bluetoothAdvertise];
   await permissions.request();
 
-  runApp(const MyApp());
+  runApp(MyApp());
 }
+
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key});
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Bluetooth teste'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({required this.title, Key? key}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  bool scanning = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Conexão Bluetooth App UV'),
-      ),
-      body: GetBuilder<BluetoothController>(
-        init: BluetoothController(),
-        builder: (controller) {
-          return Column(
-            children: [
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      scanning = true;
-                    });
-                    controller.bluetooth_escanear();
-                    Timer(Duration(seconds: 5), () {
-                      setState(() {
-                        scanning = false;
-                      });
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                  ),
-                  child: Text("Escanear dispositivos"),
-                ),
+    return FutureBuilder(
+      // Solicite permissão antes de iniciar o aplicativo
+      future: _requestBluetoothPermission(),
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MultiProvider(
+            providers: [
+              ChangeNotifierProvider<StatusConexaoProvider>.value(
+                value: StatusConexaoProvider(),
               ),
-              const SizedBox(height: 20),
-              if (scanning)
-                const Center(
-                  child: CircularProgressIndicator(),
-                )
-              else
-                Expanded(
-                  child: StreamBuilder<List<ScanResult>>(
-                    stream: controller.scanResults,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final devices = snapshot.data!;
-                        if (devices.isNotEmpty) {
-                          return ListView.builder(
-                            itemCount: devices.length,
-                            itemBuilder: (context, index) {
-                              final data = devices[index];
-                              final deviceName = data.device.name ?? 'Desconhecido';
-                              return Card(
-                                elevation: 2,
-                                child: ListTile(
-                                  title: Text(deviceName),
-                                  subtitle: Text(data.device.id.id),
-                                ),
-                              );
-                            },
-                          );
-                        } else {
-                          return const Center(
-                            child: Text("Nenhum dispositivo Bluetooth encontrado"),
-                          );
-                        }
-                      } else {
-                        return const Center(
-                          child: Text("Nenhum dispositivo encontrado"),
-                        );
-                      }
-                    },
-                  ),
-                ),
             ],
+            child: MaterialApp(
+              title: 'Xerocasa',
+              initialRoute: '/',
+              routes: {
+                '/': (context) => HomePage(),
+                '/selectDevice': (context) => const SelecionarDispositivoPage(),
+              },
+            ),
           );
-        },
-      ),
+        } else {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+      }
     );
   }
+
+  Future<void> _requestBluetoothPermission() async {
+    final permissions = await Permission.bluetooth.request();
+    if (!permissions.isGranted) {
+      // Trate o caso em que a permissão não é concedida aqui
+    }
+
+}
 }

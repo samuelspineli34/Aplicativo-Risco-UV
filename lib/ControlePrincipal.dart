@@ -2,10 +2,99 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:layout/ConfigurationPage.dart';
+import 'package:weather/weather.dart';
+import 'components/CustomAppBar.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+import 'dart:async';
+
+WeatherFactory wf = WeatherFactory("bd5e378503939ddaee76f12ad7a97608",
+    language: Language.PORTUGUESE_BRAZIL);
+
+class ClimaPage extends StatelessWidget {
+  final WeatherFactory weatherFactory;
+  ClimaPage({required this.weatherFactory});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(
+        Title: 'Clima Atual',
+        isBluetooth: true,
+        isDiscovering: false,
+      ),
+      body: FutureBuilder<Weather>(
+        future: weatherFactory.currentWeatherByLocation(-19.912998, -43.940933),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erro ao buscar o clima.'));
+          } else {
+            Weather weather = snapshot.data!;
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 16.0),
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
+                    ),
+                    child: Text(
+                      'Cidade: ${weather.areaName}',
+                      style: TextStyle(
+                        fontSize: 24, // Tamanho da fonte
+                        color: Colors.white, // Cor do texto
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.0), // Espaçamento entre os containers
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
+                    ),
+                    child: Text(
+                      'Temperatura: ${weather.temperature?.celsius?.toStringAsFixed(0)}°C',
+                      style: TextStyle(
+                        fontSize: 24, // Tamanho da fonte
+                        color: Colors.white, // Cor do texto
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.0), // Espaçamento entre os containers
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10.0),
+                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
+                    ),
+                    child: Text(
+                      'Descrição do Clima: ${weather.weatherDescription}',
+                      style: TextStyle(
+                        fontSize: 24, // Tamanho da fonte
+                        color: Colors.white, // Cor do texto
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
 
 class ControlePrincipalPage extends StatefulWidget {
   final BluetoothDevice? server;
-  const ControlePrincipalPage({this.server});
+  final WeatherFactory weatherFactory;
+  const ControlePrincipalPage({this.server, required this.weatherFactory});
 
   @override
   _ControlePrincipalPage createState() => _ControlePrincipalPage();
@@ -71,7 +160,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
         children: <Widget>[
           Container(
             child: Text(
-                    (text) {
+                (text) {
                   return text == '/shrug' ? '¯\\_(ツ)_/¯' : text;
                 }(_message.text.trim()),
                 style: const TextStyle(color: Colors.white)),
@@ -80,7 +169,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
             width: 222.0,
             decoration: BoxDecoration(
                 color:
-                _message.whom == clientID ? Colors.blueAccent : Colors.grey,
+                    _message.whom == clientID ? Colors.blueAccent : Colors.grey,
                 borderRadius: BorderRadius.circular(7.0)),
           ),
         ],
@@ -90,7 +179,8 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
       );
     }).toList();
 
-    return SingleChildScrollView(
+    return Scaffold(
+        body: SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Center(
@@ -101,41 +191,57 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          child: DropdownButton<String>(
-                            value: language == null ? 'pt_BR' : language,
-                            icon: const Icon(Icons.keyboard_arrow_down),
-                            items: _languages.map((String items) {
-                              return DropdownMenuItem(
-                                value: items,
-                                child: Text(items),
-                              );
-                            }).toList(),
-                            // After selecting the desired option,it will
-                            // change button value to selected value
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                language = newValue!;
-                              });
-                            },
-                          ),
-                        )
-                      ]),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
                   child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(children: [
+                          new CircularPercentIndicator(
+                            radius: 100.0,
+                            lineWidth: 10.0,s
+                            percent: 0.8,
+                            header: new Text(
+                              'Grau de Risco',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, // Negrito
+                                fontSize: 18, // Tamanho da fonte
+                              )),
+                            center: new Icon(
+                              Icons.sunny,
+                              size: 50.0,
+                              color: Color.fromRGBO(237, 46, 39, 1),
+                            ),
+                            backgroundColor: Colors.grey,
+                            progressColor: Color.fromRGBO(237, 46, 39, 1),
+                          ),
                           ElevatedButton(
+                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color.fromRGBO(237, 46, 39, 1))),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => ClimaPage(
+                                      weatherFactory: widget.weatherFactory),
+                                ),
+                              );
+                            },
+                            child: Text("Clima"),
+                          ),
+                          ElevatedButton(
+                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color.fromRGBO(237, 46, 39, 1))),
                             onPressed: () {
                               _printReceivedData();
                             },
                             child: Text("Imprimir Dados"),
+                          ),
+                          ElevatedButton(
+                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color.fromRGBO(237, 46, 39, 1))),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    settings: const RouteSettings(name: '/'),
+                                    builder: (context) => ConfigurationPage()),
+                              );
+                            },
+                            child: Text("Configuração"),
                           ),
                         ]),
                       ]),
@@ -145,7 +251,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   void _receiveDataFromArduino() {
@@ -165,10 +271,10 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
       );
       isListening = true; // Marque que estamos ouvindo o stream
     } else {
-      print('Erro: A conexão Bluetooth não está estabelecida ou já estamos ouvindo.');
+      print(
+          'Erro: A conexão Bluetooth não está estabelecida ou já estamos ouvindo.');
     }
   }
-
 
   void _onDataReceived(Uint8List data) {
     print('Tamanho dos dados recebidos: ${data.length}');
@@ -202,7 +308,8 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
     int index = buffer.indexOf(13);
     if (~index != 0) {
       receivedData = backspacesCounter > 0
-          ? _messageBuffer.substring(0, _messageBuffer.length - backspacesCounter)
+          ? _messageBuffer.substring(
+              0, _messageBuffer.length - backspacesCounter)
           : _messageBuffer + dataString.substring(0, index);
       print('Dados recebidos: $receivedData'); // Imprime os dados recebidos
       setState(() {
@@ -211,7 +318,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
             1,
             backspacesCounter > 0
                 ? _messageBuffer.substring(
-                0, _messageBuffer.length - backspacesCounter)
+                    0, _messageBuffer.length - backspacesCounter)
                 : _messageBuffer + dataString.substring(0, index),
           ),
         );
@@ -220,7 +327,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
     } else {
       _messageBuffer = (backspacesCounter > 0
           ? _messageBuffer.substring(
-          0, _messageBuffer.length - backspacesCounter)
+              0, _messageBuffer.length - backspacesCounter)
           : _messageBuffer + dataString);
     }
   }

@@ -7,6 +7,10 @@ import 'package:layout/ControlePrincipal.dart';
 import 'package:provider/provider.dart';
 import 'components/CustomAppBar.dart';
 import 'provider/StatusConexaoProvider.dart';
+import 'package:weather/weather.dart';
+
+WeatherFactory wf = WeatherFactory("bd5e378503939ddaee76f12ad7a97608", language: Language.PORTUGUESE_BRAZIL);
+
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -27,6 +31,7 @@ class HomePage extends StatelessWidget {
         isBluetooth: true,
         isDiscovering: false,
         onPress: onPressBluetooth,
+
       ),
       body: Center(
         child: Padding(
@@ -47,7 +52,7 @@ class HomePage extends StatelessWidget {
                     ],
                   )
                 : ControlePrincipalPage(
-                    server: StatusConnectionProvider.device));
+                    server: StatusConnectionProvider.device,  weatherFactory: wf));
           }),
         ),
       ),

@@ -8,7 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Solicite as permissões necessárias
+  // Solicite as permissões necessárias (comente essas linhas quando for testar no Desktop)
   final permissions = [Permission.bluetooth, Permission.location, Permission.bluetoothScan, Permission.bluetoothConnect, Permission.bluetoothAdvertise];
   await permissions.request();
 

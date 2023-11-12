@@ -197,7 +197,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
                         Column(children: [
                           new CircularPercentIndicator(
                             radius: 100.0,
-                            lineWidth: 10.0,s
+                            lineWidth: 10.0,
                             percent: 0.8,
                             header: new Text(
                               'Grau de Risco',

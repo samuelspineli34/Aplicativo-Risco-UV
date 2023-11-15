@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:get/get.dart';
 import 'package:layout/ConfigurationPage.dart';
 import 'package:weather/weather.dart';
 import 'components/CustomAppBar.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import 'dart:async';
+import 'utilities/text_utils.dart';
 
 WeatherFactory wf = WeatherFactory("bd5e378503939ddaee76f12ad7a97608",
     language: Language.PORTUGUESE_BRAZIL);
@@ -18,7 +21,7 @@ class ClimaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
+      appBar: const CustomAppBar(
         Title: 'Clima Atual',
         isBluetooth: true,
         isDiscovering: false,
@@ -27,59 +30,99 @@ class ClimaPage extends StatelessWidget {
         future: weatherFactory.currentWeatherByLocation(-19.912998, -43.940933),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Erro ao buscar o clima.'));
+            return const Center(child: Text('Erro ao buscar o clima.'));
           } else {
             Weather weather = snapshot.data!;
+
+            String weatherDescription = weather.weatherDescription != null
+              ? "${weather.weatherDescription?[0].toUpperCase()}${weather.weatherDescription?.substring(1)}"
+              : "Céu limpo";
+
             return Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  SizedBox(height: 16.0),
+                  Text(
+                    weatherDescription,
+                    style: const TextStyle(
+                      fontSize: 28, // Tamanho da fonte
+                      color: Colors.black, // Cor do texto
+                      fontWeight: FontWeight.bold
+                    ),
+                  ),
                   Container(
                     padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
-                    ),
                     child: Text(
-                      'Cidade: ${weather.areaName}',
-                      style: TextStyle(
-                        fontSize: 24, // Tamanho da fonte
-                        color: Colors.white, // Cor do texto
+                      formatTemperature(weather.temperature),
+                      style: const TextStyle(
+                        fontSize: 64, // Tamanho da fonte
+                        color: Colors.black, // Cor do texto
+                        fontWeight: FontWeight.bold
                       ),
                     ),
                   ),
-                  SizedBox(height: 16.0), // Espaçamento entre os containers
+
                   Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
-                    ),
-                    child: Text(
-                      'Temperatura: ${weather.temperature?.celsius?.toStringAsFixed(0)}°C',
-                      style: TextStyle(
-                        fontSize: 24, // Tamanho da fonte
-                        color: Colors.white, // Cor do texto
-                      ),
-                    ),
+                    alignment: Alignment.bottomLeft,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Resumo diário',
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 24, // Tamanho da fonte
+                            color: Colors.black, // Cor do texto
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        makeText(
+                          "Sensação térmica de ${formatTemperature(weather.tempFeelsLike)} em ${weather.areaName}. "
+                          "Hoje a temperatura pode variar entre ${formatTemperature(weather.tempMin)} e ${formatTemperature(weather.tempMax)}."
+                        ),
+                      ]
+                    )
                   ),
-                  SizedBox(height: 16.0), // Espaçamento entre os containers
                   Container(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
+                    margin: const EdgeInsets.all(10.0),  
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10.0),
-                      color: Color.fromRGBO(237, 46, 39, 1), // Cor de fundo
+                      color: const Color.fromRGBO(83, 83, 90, 1) // Cor de fundo
                     ),
-                    child: Text(
-                      'Descrição do Clima: ${weather.weatherDescription}',
-                      style: TextStyle(
-                        fontSize: 24, // Tamanho da fonte
-                        color: Colors.white, // Cor do texto
-                      ),
-                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          children: [
+                            const Icon(Icons.wind_power, color: Colors.white),
+                            const SizedBox(height: 16.0),
+                            makeText("${weather.windSpeed?.toStringAsFixed(2)} m/s", textColor: Colors.white, size: 14),
+                            makeText("Vel. Vento", textColor: Colors.white, size: 14)
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Icon(Icons.water_drop, color: Colors.white),
+                            const SizedBox(height: 16.0),
+                            makeText("${weather.humidity?.toStringAsFixed(2)} %", textColor: Colors.white, size: 14),
+                            makeText("Umidade", textColor: Colors.white, size: 14)
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            const Icon(Icons.cloud, color: Colors.white),
+                            const SizedBox(height: 16.0),
+                            makeText("${weather.cloudiness?.toStringAsFixed(2)} okta", textColor: Colors.white, size: 14),
+                            makeText("Nebulosidade", textColor: Colors.white, size: 14),
+                          ],
+                        )
+                      ],
+
+                    )
                   ),
                 ],
               ),
@@ -195,17 +238,17 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(children: [
-                          new CircularPercentIndicator(
+                          CircularPercentIndicator(
                             radius: 100.0,
                             lineWidth: 10.0,
                             percent: 0.8,
-                            header: new Text(
+                            header: const Text(
                               'Grau de Risco',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold, // Negrito
                                 fontSize: 18, // Tamanho da fonte
                               )),
-                            center: new Icon(
+                            center: const Icon(
                               Icons.sunny,
                               size: 50.0,
                               color: Color.fromRGBO(237, 46, 39, 1),
@@ -223,14 +266,14 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
                                 ),
                               );
                             },
-                            child: Text("Clima"),
+                            child: const Text("Clima"),
                           ),
                           ElevatedButton(
                             style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color.fromRGBO(237, 46, 39, 1))),
                             onPressed: () {
                               _printReceivedData();
                             },
-                            child: Text("Imprimir Dados"),
+                            child: const Text("Imprimir Dados"),
                           ),
                           ElevatedButton(
                             style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Color.fromRGBO(237, 46, 39, 1))),
@@ -241,7 +284,7 @@ class _ControlePrincipalPage extends State<ControlePrincipalPage> {
                                     builder: (context) => ConfigurationPage()),
                               );
                             },
-                            child: Text("Configuração"),
+                            child: const Text("Configuração"),
                           ),
                         ]),
                       ]),

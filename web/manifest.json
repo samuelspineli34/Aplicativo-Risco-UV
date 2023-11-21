@@ -1,6 +1,6 @@
 {
-    "name": "arduino_uv",
-    "short_name": "arduino_uv",
+    "name": "uvcseguro",
+    "short_name": "uvcseguro",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

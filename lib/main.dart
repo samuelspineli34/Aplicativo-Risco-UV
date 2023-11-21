@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () async {
               // Substitua 'IP_DO_SEU_ESP32' pelo endereço IP do seu ESP32
-              var response = await http.get('http://192.168.4.1');
+              var response = await http.get(Uri.parse('http://192.168.4.1'));
 
               if (response.statusCode == 200) {
                 print('Resposta do ESP32: ${response.body}');

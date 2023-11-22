@@ -43,6 +43,7 @@ dependencies:
   percent_indicator: ^4.2.3
   flutter_blue_plus: ^1.28.10
   get: ^4.6.6
+  multiselect: ^0.1.0
 
 
 

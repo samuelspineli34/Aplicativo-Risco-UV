@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'components/CustomAppBar.dart';
+import 'package:multiselect/multiselect.dart';
 
 class ConfigurationPage extends StatefulWidget {
   @override
   _ConfigurationPageState createState() => _ConfigurationPageState();
 }
 
+const List<String> skinColors = ['Nenhuma selecionada', 'extremamente branca', 'branca', 'morena clara', 'morena', 'morena escura', 'negra'];
+const List<String> conditions = ['Albinismo', 'Imunossupressão', 'Xeroderma pigmentoso', 'Histórico familiar'];
+
 class _ConfigurationPageState extends State<ConfigurationPage> {
   String selectedSkinColor = 'Nenhuma selecionada';
   int selectedAge = 23;
-  String selectedCondition = 'Nenhuma selecionada';
+  List<String> selectedConditions = [];
 
   @override
   Widget build(BuildContext context) {
@@ -24,24 +29,56 @@ class _ConfigurationPageState extends State<ConfigurationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ListTile(
-              title: Text('Cor de pele: $selectedSkinColor'),
-              onTap: () {
-                _showSkinColorDialog();
+            const Text("Raça/Cor da pele: "),
+            DropdownMenu<String>(
+              initialSelection: selectedSkinColor,
+              textStyle: const TextStyle(
+                fontStyle: FontStyle.normal
+              ),
+              onSelected: (String? value) {
+                // This is called when the user selects an item.
+                setState(() {
+                  selectedSkinColor = value!;
+                });
               },
+              dropdownMenuEntries: skinColors.map<DropdownMenuEntry<String>>((String value) {
+                return DropdownMenuEntry<String>(value: value, label: value);
+              }).toList(),
             ),
-            ListTile(
-              title: Text('Idade: $selectedAge anos'),
-              onTap: () {
-                _showAgeDialog();
+            const Padding(padding: EdgeInsets.only(bottom: 20)),
+            const Text("Idade: "),
+            const Padding(padding: EdgeInsets.only(bottom: 10)),
+            TextField(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "Idade"
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly
+              ], // Only numbers can be entered
+              onChanged: (String? value) {
+                setState(() {
+                  selectedAge = int.parse(value!);  
+                });
+              }
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 20)),
+            const Text("Condições: "),
+            const Padding(padding: EdgeInsets.only(bottom: 10)),
+            DropDownMultiSelect(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "Escolha alguma condição de saúde",
+              ),
+              options: conditions,
+		          selectedValues: selectedConditions,
+		          onChanged: (value) {
+                setState(() {
+                  selectedConditions = value as List<String>;
+                });
               },
-            ),
-            ListTile(
-              title: Text('Condição: $selectedCondition'),
-              onTap: () {
-                _showConditionDialog();
-              },
-            ),
+            )
           ],
         ),
       ),
@@ -127,7 +164,7 @@ class _ConfigurationPageState extends State<ConfigurationPage> {
               child: Text('Salvar'),
               onPressed: () {
                 // Update selectedCondition and save data
-                selectedCondition = 'Updated Condition';
+                selectedConditions = ['Updated Condition'];
                 Navigator.of(context).pop();
               },
             ),
@@ -136,4 +173,6 @@ class _ConfigurationPageState extends State<ConfigurationPage> {
       },
     );
   }
+
+
 }
